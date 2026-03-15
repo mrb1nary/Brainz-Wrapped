@@ -8,12 +8,17 @@ use axum::{
 };
 
 use crate::analytics::Analytics;
+use crate::analytics::busiest_day::BusiestDay;
+use crate::analytics::streaks::StreakStats;
 use crate::listenbrainz::fetch_last_year_listens;
 
 pub fn routes() -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/heatmap/{username}", get(heatmap))
+        .route("/hourly/{username}", get(hourly))
+        .route("/streaks/{username}", get(streaks))
+        .route("/busiest-day/{username}", get(busiest_day))
 }
 
 async fn health() -> &'static str {
@@ -31,4 +36,46 @@ async fn heatmap(
     let analytics = Analytics::new(listens);
 
     Ok(Json(analytics.heatmap()))
+}
+
+async fn hourly(
+    Path(username): Path<String>,
+) -> Result<Json<HashMap<u32, u32>>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    Ok(Json(analytics.listens_per_hour()))
+}
+
+async fn streaks(
+    Path(username): Path<String>,
+) -> Result<Json<StreakStats>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    Ok(Json(analytics.streaks()))
+}
+
+async fn busiest_day(
+    Path(username): Path<String>,
+) -> Result<Json<BusiestDay>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    analytics
+        .busiest_day()
+        .map(Json)
+        .ok_or(StatusCode::NOT_FOUND)
 }

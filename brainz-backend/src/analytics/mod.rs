@@ -1,11 +1,9 @@
 use crate::listenbrainz::Listen;
 
-
 pub mod heatmap;
-// future:
-// pub mod hourly;
-// pub mod streaks;
-// pub mod overview;
+pub mod hourly;
+pub mod streaks;
+pub mod busiest_day;
 
 pub struct Analytics {
     listens: Vec<Listen>,
