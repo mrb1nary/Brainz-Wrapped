@@ -10,6 +10,7 @@ use axum::{
 use crate::analytics::Analytics;
 use crate::analytics::busiest_day::BusiestDay;
 use crate::analytics::streaks::StreakStats;
+use crate::analytics::top_artists::ArtistStat;
 use crate::listenbrainz::fetch_last_year_listens;
 
 pub fn routes() -> Router {
@@ -19,6 +20,7 @@ pub fn routes() -> Router {
         .route("/hourly/{username}", get(hourly))
         .route("/streaks/{username}", get(streaks))
         .route("/busiest-day/{username}", get(busiest_day))
+        .route("/top-artists/{username}", get(top_artists))
 }
 
 async fn health() -> &'static str {
@@ -78,4 +80,17 @@ async fn busiest_day(
         .busiest_day()
         .map(Json)
         .ok_or(StatusCode::NOT_FOUND)
+}
+
+async fn top_artists(
+    Path(username): Path<String>,
+) -> Result<Json<Vec<ArtistStat>>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    Ok(Json(analytics.top_artists(10)))
 }
