@@ -21,6 +21,7 @@ pub struct Listen {
 #[derive(Debug, Deserialize)]
 pub struct TrackMetadata {
     pub artist_name: String,
+    pub track_name: String,
 }
 
 pub async fn fetch_last_year_listens(username: &str)->Result<Vec<Listen>, reqwest::Error>{

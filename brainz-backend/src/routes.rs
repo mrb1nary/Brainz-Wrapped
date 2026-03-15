@@ -11,6 +11,7 @@ use crate::analytics::Analytics;
 use crate::analytics::busiest_day::BusiestDay;
 use crate::analytics::streaks::StreakStats;
 use crate::analytics::top_artists::ArtistStat;
+use crate::analytics::top_tracks::TrackStat;
 use crate::listenbrainz::fetch_last_year_listens;
 
 pub fn routes() -> Router {
@@ -21,6 +22,7 @@ pub fn routes() -> Router {
         .route("/streaks/{username}", get(streaks))
         .route("/busiest-day/{username}", get(busiest_day))
         .route("/top-artists/{username}", get(top_artists))
+        .route("/top-tracks/{username}", get(top_tracks))
 }
 
 async fn health() -> &'static str {
@@ -93,4 +95,17 @@ async fn top_artists(
     let analytics = Analytics::new(listens);
 
     Ok(Json(analytics.top_artists(10)))
+}
+
+async fn top_tracks(
+    Path(username): Path<String>,
+) -> Result<Json<Vec<TrackStat>>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    Ok(Json(analytics.top_tracks(10)))
 }
