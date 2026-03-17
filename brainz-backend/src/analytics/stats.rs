@@ -1,10 +1,13 @@
 use serde::Serialize;
+use std::collections::HashMap;
 
 use crate::analytics::top_artists::ArtistStat;
 use crate::analytics::top_tracks::TrackStat;
 use crate::analytics::sessions::SessionStats;
 use crate::analytics::streaks::StreakStats;
 use crate::analytics::busiest_day::BusiestDay;
+
+use super::Analytics;
 
 #[derive(Serialize)]
 pub struct StatsResponse {
@@ -13,11 +16,10 @@ pub struct StatsResponse {
     pub sessions: SessionStats,
     pub streaks: StreakStats,
     pub busiest_day: Option<BusiestDay>,
-    pub hourly: std::collections::HashMap<u32, u32>,
+    pub hourly: HashMap<u32, u32>,
     pub weekday: Vec<(String, u32)>,
+    pub heatmap: HashMap<String, u32>,
 }
-
-use super::Analytics;
 
 impl Analytics {
 
@@ -31,6 +33,7 @@ impl Analytics {
             busiest_day: self.busiest_day(),
             hourly: self.listens_per_hour(),
             weekday: self.weekday_distribution(),
+            heatmap: self.heatmap(),
         }
     }
 
