@@ -9,10 +9,13 @@ use axum::{
 
 use crate::analytics::Analytics;
 use crate::analytics::busiest_day::BusiestDay;
+use crate::analytics::listening_age::ListeningAge;
 use crate::analytics::sessions::SessionStats;
 use crate::analytics::streaks::StreakStats;
 use crate::analytics::top_artists::ArtistStat;
 use crate::analytics::top_tracks::TrackStat;
+use crate::analytics::stats::StatsResponse;
+
 use crate::listenbrainz::fetch_last_year_listens;
 
 pub fn routes() -> Router {
@@ -26,10 +29,12 @@ pub fn routes() -> Router {
         .route("/top-tracks/{username}", get(top_tracks))
         .route("/sessions/{username}", get(sessions))
         .route("/weekday/{username}", get(weekday))
+        .route("/listening-age/{username}", get(listening_age_handler))
         .route("/stats/{username}", get(stats))
 }
 
 async fn health() -> &'static str {
+    println!("Server is good!");
     "Server healthy"
 }
 
@@ -98,7 +103,10 @@ async fn top_artists(
 
     let analytics = Analytics::new(listens);
 
-    Ok(Json(analytics.top_artists(10)))
+    // FIX: await async function
+    let result = analytics.top_artists(10).await;
+
+    Ok(Json(result))
 }
 
 async fn top_tracks(
@@ -140,17 +148,44 @@ async fn weekday(
     Ok(Json(analytics.weekday_distribution()))
 }
 
-use crate::analytics::stats::StatsResponse;
-
 async fn stats(
     Path(username): Path<String>,
 ) -> Result<Json<StatsResponse>, StatusCode> {
 
-    let listens = fetch_last_year_listens(&username)
-        .await
-        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+    println!("[ROUTE] stats HIT {}", username);
+
+    let listens = match fetch_last_year_listens(&username).await {
+        Ok(l) => {
+            println!("[FETCH] success, listens: {}", l.len());
+            l
+        }
+        Err(e) => {
+            println!("[FETCH][ERROR] {:?}", e);
+            return Err(StatusCode::BAD_GATEWAY);
+        }
+    };
+
+    println!("[DEBUG] creating analytics");
 
     let analytics = Analytics::new(listens);
 
-    Ok(Json(analytics.full_stats()))
+    println!("[DEBUG] calling full_stats");
+
+    let result = analytics.full_stats().await;
+
+    println!("[DEBUG] full_stats done");
+
+    Ok(Json(result))
+}
+
+async fn listening_age_handler(
+    Path(username): Path<String>,
+) -> Json<Vec<ListeningAge>> {
+    let listens = fetch_last_year_listens(&username).await.unwrap();
+
+    let analytics = Analytics::new(listens);
+
+    let data = analytics.listening_age().await;
+
+    Json(data)
 }

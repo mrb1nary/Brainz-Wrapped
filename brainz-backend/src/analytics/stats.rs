@@ -22,11 +22,19 @@ pub struct StatsResponse {
 }
 
 impl Analytics {
+    /// Full stats (async because artist images are fetched)
+    pub async fn full_stats(&self) -> StatsResponse {
+        println!("[STATS] full_stats called");
 
-    pub fn full_stats(&self) -> StatsResponse {
+        let top_artists = self.top_artists(10).await;
+
+        println!(
+            "[STATS] top_artists computed: {} artists",
+            top_artists.len()
+        );
 
         StatsResponse {
-            top_artists: self.top_artists(10),
+            top_artists,
             top_tracks: self.top_tracks(10),
             sessions: self.listening_sessions(),
             streaks: self.streaks(),
@@ -36,5 +44,4 @@ impl Analytics {
             heatmap: self.heatmap(),
         }
     }
-
 }

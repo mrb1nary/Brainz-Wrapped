@@ -9,6 +9,7 @@ pub mod top_tracks;
 pub mod sessions;
 pub mod weekday;
 pub mod stats;
+pub mod listening_age;
 
 pub struct Analytics {
     listens: Vec<Listen>,

@@ -25,8 +25,13 @@ pub struct TrackMetadata {
 }
 
 pub async fn fetch_last_year_listens(username: &str)->Result<Vec<Listen>, reqwest::Error>{
-    let client = Client::new();
+    // let client = Client::new();
+    let client = Client::builder()
+        .http1_only()
+        .user_agent("brainz-wrapped/0.1")
+        .build()?;
     let mut all_listens = Vec::new();
+
 
     let mut max_ts: Option<i64> = None;
 
