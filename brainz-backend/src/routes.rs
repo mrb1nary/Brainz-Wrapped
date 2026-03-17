@@ -9,6 +9,7 @@ use axum::{
 
 use crate::analytics::Analytics;
 use crate::analytics::busiest_day::BusiestDay;
+use crate::analytics::sessions::SessionStats;
 use crate::analytics::streaks::StreakStats;
 use crate::analytics::top_artists::ArtistStat;
 use crate::analytics::top_tracks::TrackStat;
@@ -23,6 +24,8 @@ pub fn routes() -> Router {
         .route("/busiest-day/{username}", get(busiest_day))
         .route("/top-artists/{username}", get(top_artists))
         .route("/top-tracks/{username}", get(top_tracks))
+        .route("/sessions/{username}", get(sessions))
+        .route("/weekday/{username}", get(weekday))
 }
 
 async fn health() -> &'static str {
@@ -108,4 +111,30 @@ async fn top_tracks(
     let analytics = Analytics::new(listens);
 
     Ok(Json(analytics.top_tracks(10)))
+}
+
+async fn sessions(
+    Path(username): Path<String>,
+) -> Result<Json<SessionStats>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    Ok(Json(analytics.listening_sessions()))
+}
+
+async fn weekday(
+    Path(username): Path<String>,
+) -> Result<Json<Vec<(String, u32)>>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    Ok(Json(analytics.weekday_distribution()))
 }

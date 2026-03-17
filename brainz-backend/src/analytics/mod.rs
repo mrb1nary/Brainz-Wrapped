@@ -6,6 +6,9 @@ pub mod streaks;
 pub mod busiest_day;
 pub mod top_artists;
 pub mod top_tracks;
+pub mod sessions;
+pub mod weekday;
+pub mod stats;
 
 pub struct Analytics {
     listens: Vec<Listen>,
