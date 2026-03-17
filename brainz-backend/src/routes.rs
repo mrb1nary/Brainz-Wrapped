@@ -26,6 +26,7 @@ pub fn routes() -> Router {
         .route("/top-tracks/{username}", get(top_tracks))
         .route("/sessions/{username}", get(sessions))
         .route("/weekday/{username}", get(weekday))
+        .route("/stats/{username}", get(stats))
 }
 
 async fn health() -> &'static str {
@@ -137,4 +138,19 @@ async fn weekday(
     let analytics = Analytics::new(listens);
 
     Ok(Json(analytics.weekday_distribution()))
+}
+
+use crate::analytics::stats::StatsResponse;
+
+async fn stats(
+    Path(username): Path<String>,
+) -> Result<Json<StatsResponse>, StatusCode> {
+
+    let listens = fetch_last_year_listens(&username)
+        .await
+        .map_err(|_| StatusCode::BAD_GATEWAY)?;
+
+    let analytics = Analytics::new(listens);
+
+    Ok(Json(analytics.full_stats()))
 }
